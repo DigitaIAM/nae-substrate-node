@@ -1,13 +1,13 @@
 [package]
-name = "pallet-template"
-version = "4.0.0-dev"
-description = "FRAME pallet template for defining custom runtime logic."
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
-homepage = "https://substrate.io/"
+name = "pallet-nae"
+version = "0.1.0-dev"
+description = "NAE pallet for incoming information."
+authors = ["Dmitriy Shabanov <https://github.com/shabanovd>"]
+homepage = "https://github.com/DigitaIAM"
 edition = "2021"
-license = "Unlicense"
+license = "GPL-3.0"
 publish = false
-repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
+repository = "https://github.com/DigitaIAM/nae-substrate-node"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
