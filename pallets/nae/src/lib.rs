@@ -68,7 +68,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event emitted when changes has been accepted.
-		MutationAccepted(T::AccountId), // TODO BoundedVec<Change<T>, T::MaxChanges>
+		MutationAccepted(T::AccountId, BoundedVec<Change, T::MaxChanges>)
 	}
 
 	#[pallet::error]
@@ -102,7 +102,7 @@ pub mod pallet {
 		#[pallet::weight(1_000_000)]
 		pub fn modify(
 			origin: OriginFor<T>,
-			change: Change // TODO BoundedVec<Change<T>, T::MaxChanges>,
+			changes: BoundedVec<Change, T::MaxChanges>
 		) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
@@ -112,7 +112,7 @@ pub mod pallet {
 			// Get the block number from the FRAME System pallet.
 			// let current_block = <frame_system::Pallet<T>>::block_number();
 
-			// for change in changes {
+			for change in changes.clone() {
 
 				// Verify that before states correct
 				let current = Memory::<T>::get(change.primary, &change.relation);
@@ -123,10 +123,10 @@ pub mod pallet {
 					None => Memory::<T>::remove(change.primary, change.relation.clone()),
 					Some(v) => Memory::<T>::insert(change.primary, change.relation.clone(), v),
 				}
-			// }
+			}
 
 			// Emit an event that the claim was created.
-			Self::deposit_event(Event::MutationAccepted(sender)); // TODO , changes));
+			Self::deposit_event(Event::MutationAccepted(sender, changes));
 
 			Ok(())
 		}
