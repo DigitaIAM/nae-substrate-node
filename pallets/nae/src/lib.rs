@@ -13,19 +13,19 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, storage::bounded_vec::BoundedVec, traits::ConstU32};
+	use frame_support::{pallet_prelude::*, storage::bounded_vec::BoundedVec};
 	use frame_system::pallet_prelude::*;
 	// use sp_std::prelude::*;
 	use sp_runtime::RuntimeDebug;
 
-	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, RuntimeDebug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-	// #[scale_info(skip_type_params(T))]
-	pub struct Change { // TODO <T: Config> {
+	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen)]
+	#[scale_info(skip_type_params(T))]
+	pub struct Change<T: Config> {
 		/// primary object of relation
 		pub primary: ID,
 
 		/// description of relation between primary object and value
-		pub relation: BoundedVec<ID, ConstU32<32>>, // TODO T::MaxContent>,
+		pub relation: BoundedVec<ID, T::MaxContent>,
 
 		/// value before modification
 		pub before: Option<Value>,
@@ -34,16 +34,40 @@ pub mod pallet {
 		pub after: Option<Value>,
 	}
 
-	// impl<T: Config> Clone for Change<T> {
-	// 	fn clone(&self) -> Self {
-	// 		Change {
-	// 			primary: self.primary.clone(),
-	// 			relation: self.relation.clone(),
-	// 			before: self.before.clone(),
-	// 			after: self.after.clone(),
-	// 		}
-	// 	}
-	// }
+	impl<T: Config> sp_std::fmt::Debug for Change<T> {
+		fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+			f.debug_struct("Change")
+				.field("primary", &self.primary)
+				.field("relation", &self.relation)
+				.field("before", &self.before)
+				.field("after", &self.after)
+				.finish()
+		}
+	}
+
+	impl<T: Config> Clone for Change<T> {
+		fn clone(&self) -> Self {
+			Change {
+				primary: self.primary.clone(),
+				relation: self.relation.clone(),
+				before: self.before.clone(),
+				after: self.after.clone(),
+			}
+		}
+	}
+
+	impl<Lhs, Rhs> PartialEq<Change<Rhs>> for Change<Lhs>
+		where
+			Lhs: Config,
+			Rhs: Config,
+	{
+		fn eq(&self, rhs: &Change<Rhs>) -> bool {
+			self.primary == rhs.primary
+				&& self.relation == rhs.relation
+				&& self.before == rhs.before
+				&& self.after == rhs.after
+		}
+	}
 
 	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, RuntimeDebug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 	pub enum Value {
@@ -73,7 +97,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event emitted when changes has been accepted.
-		MutationAccepted(T::AccountId, BoundedVec<Change, T::MaxChanges>)
+		MutationAccepted(T::AccountId, BoundedVec<Change<T>, T::MaxChanges>)
 	}
 
 	#[pallet::error]
@@ -98,7 +122,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		ID,
 		Blake2_128Concat,
-		BoundedVec<ID, ConstU32<32>>, // TODO T::MaxContent>,
+		BoundedVec<ID, T::MaxContent>,
 		Value // TODO (T::BlockNumber, Value),
 	>;
 
@@ -107,7 +131,7 @@ pub mod pallet {
 		#[pallet::weight(1_000_000)]
 		pub fn modify(
 			origin: OriginFor<T>,
-			changes: BoundedVec<Change, T::MaxChanges>
+			changes: BoundedVec<Change<T>, T::MaxChanges>
 		) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
