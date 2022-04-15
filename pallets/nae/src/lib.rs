@@ -13,8 +13,9 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, storage::bounded_vec::BoundedVec};
+	use frame_support::{pallet_prelude::*, storage::bounded_vec::BoundedVec, traits::ConstU32};
 	use frame_system::pallet_prelude::*;
+	// use sp_std::prelude::*;
 	use sp_runtime::RuntimeDebug;
 
 	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, RuntimeDebug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -24,7 +25,7 @@ pub mod pallet {
 		pub primary: ID,
 
 		/// description of relation between primary object and value
-		pub relation: ID, // TODO BoundedVec<ID, T::MaxContent>,
+		pub relation: BoundedVec<ID, ConstU32<32>>, // TODO T::MaxContent>,
 
 		/// value before modification
 		pub before: Option<Value>,
@@ -33,10 +34,14 @@ pub mod pallet {
 		pub after: Option<Value>,
 	}
 
-	// impl<T: Config> Debug for Change<T> {
-	// impl std::fmt::Debug for Change {
-	// 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-	// 		write!(f, "Change {} {:?} > {:?}", self.primary, self.before, self.after)
+	// impl<T: Config> Clone for Change<T> {
+	// 	fn clone(&self) -> Self {
+	// 		Change {
+	// 			primary: self.primary.clone(),
+	// 			relation: self.relation.clone(),
+	// 			before: self.before.clone(),
+	// 			after: self.after.clone(),
+	// 		}
 	// 	}
 	// }
 
@@ -93,7 +98,7 @@ pub mod pallet {
 		Blake2_128Concat,
 		ID,
 		Blake2_128Concat,
-		ID, // TODO BoundedVec<ID, T::MaxContent>,
+		BoundedVec<ID, ConstU32<32>>, // TODO T::MaxContent>,
 		Value // TODO (T::BlockNumber, Value),
 	>;
 
@@ -112,6 +117,8 @@ pub mod pallet {
 			// Get the block number from the FRAME System pallet.
 			// let current_block = <frame_system::Pallet<T>>::block_number();
 
+			// let mut mutations = Vec::with_capacity(changes.len());
+
 			for change in changes.clone() {
 
 				// Verify that before states correct
@@ -120,10 +127,15 @@ pub mod pallet {
 
 				// mutate storage
 				match change.after {
-					None => Memory::<T>::remove(change.primary, change.relation.clone()),
-					Some(v) => Memory::<T>::insert(change.primary, change.relation.clone(), v),
+					None => Memory::<T>::remove(change.primary, change.relation),
+					Some(v) => Memory::<T>::insert(change.primary, change.relation, v),
 				}
+
+				// mutations.push(change);
 			}
+
+			// let mutations: BoundedVec<_, _> =
+			// 	mutations.try_into().map_err(|()| Error::<T>::TooManyChanges)?;
 
 			// Emit an event that the claim was created.
 			Self::deposit_event(Event::MutationAccepted(sender, changes));
