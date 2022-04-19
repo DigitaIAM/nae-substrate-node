@@ -289,7 +289,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
 		// Include the pallet-nae in the runtime.
-		NaeModule: pallet_nae,
+		Nae: pallet_nae,
 	}
 );
 
@@ -332,7 +332,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
-		[pallet_nae, NaeModule]
+		[pallet_nae, Nae]
 	);
 }
 

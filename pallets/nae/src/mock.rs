@@ -18,7 +18,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		NaeModule: pallet_nae::{Pallet, Call, Storage, Event<T>},
+		Nae: pallet_nae::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -51,6 +51,8 @@ impl system::Config for Test {
 
 impl pallet_nae::Config for Test {
 	type Event = Event;
+	type MaxChanges = frame_support::traits::ConstU32<16>;
+	type MaxContent = frame_support::traits::ConstU32<16>;
 }
 
 // Build genesis storage according to the mock runtime.

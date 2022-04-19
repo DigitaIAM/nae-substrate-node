@@ -2,12 +2,12 @@
 
 pub use pallet::*;
 
-// #[cfg(test)]
-// mod mock;
-//
-// #[cfg(test)]
-// mod tests;
-//
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
 
@@ -117,6 +117,7 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
+	#[pallet::getter(fn memory)]
 	pub(super) type Memory<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
@@ -137,6 +138,8 @@ pub mod pallet {
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/v3/runtime/origins
 			let sender = ensure_signed(origin)?;
+
+			ensure!(!changes.is_empty(), Error::<T>::EmptyChanges);
 
 			// Get the block number from the FRAME System pallet.
 			// let current_block = <frame_system::Pallet<T>>::block_number();
