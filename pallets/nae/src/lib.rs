@@ -13,12 +13,15 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{pallet_prelude::*, storage::bounded_vec::BoundedVec};
+	use frame_support::{
+		pallet_prelude::*, storage::bounded_vec::BoundedVec,
+		CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound
+	};
 	use frame_system::pallet_prelude::*;
 	// use sp_std::prelude::*;
 	use sp_runtime::RuntimeDebug;
 
-	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen)]
+	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
 	#[scale_info(skip_type_params(T))]
 	pub struct Change<T: Config> {
 		/// primary object of relation
@@ -32,41 +35,6 @@ pub mod pallet {
 
 		/// value after modification
 		pub after: Option<Value>,
-	}
-
-	impl<T: Config> sp_std::fmt::Debug for Change<T> {
-		fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
-			f.debug_struct("Change")
-				.field("primary", &self.primary)
-				.field("relation", &self.relation)
-				.field("before", &self.before)
-				.field("after", &self.after)
-				.finish()
-		}
-	}
-
-	impl<T: Config> Clone for Change<T> {
-		fn clone(&self) -> Self {
-			Change {
-				primary: self.primary.clone(),
-				relation: self.relation.clone(),
-				before: self.before.clone(),
-				after: self.after.clone(),
-			}
-		}
-	}
-
-	impl<Lhs, Rhs> PartialEq<Change<Rhs>> for Change<Lhs>
-		where
-			Lhs: Config,
-			Rhs: Config,
-	{
-		fn eq(&self, rhs: &Change<Rhs>) -> bool {
-			self.primary == rhs.primary
-				&& self.relation == rhs.relation
-				&& self.before == rhs.before
-				&& self.after == rhs.after
-		}
 	}
 
 	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, RuntimeDebug, Clone, PartialEq, Eq, PartialOrd, Ord)]
