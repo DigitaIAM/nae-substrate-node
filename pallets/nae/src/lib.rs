@@ -19,7 +19,6 @@ pub mod pallet {
 	};
 	use frame_system::pallet_prelude::*;
 	// use sp_std::prelude::*;
-	use sp_runtime::RuntimeDebug;
 
 	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
 	#[scale_info(skip_type_params(T))]
@@ -42,6 +41,7 @@ pub mod pallet {
 	#[codec(mel_bound())]
 	pub enum Value<T: Config> {
 		ID(ID),
+		IDS(BoundedVec<ID, T::MaxIDS>),
 		String(BoundedVec<u8, T::MaxString>),
 	}
 
@@ -59,6 +59,8 @@ pub mod pallet {
 		type MaxChanges: Get<u32>;
 		///
 		type MaxRelations: Get<u32>;
+		///
+		type MaxIDS: Get<u32>;
 		///
 		type MaxString: Get<u32>;
 	}

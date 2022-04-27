@@ -271,6 +271,7 @@ impl pallet_nae::Config for Runtime {
 	type Event = Event;
 	type MaxChanges = frame_support::traits::ConstU32<256>;
 	type MaxRelations = frame_support::traits::ConstU32<16>;
+	type MaxIDS = frame_support::traits::ConstU32<16>;
 	type MaxString = frame_support::traits::ConstU32<256>;
 }
 
