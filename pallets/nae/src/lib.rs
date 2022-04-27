@@ -28,18 +28,21 @@ pub mod pallet {
 		pub primary: ID,
 
 		/// description of relation between primary object and value
-		pub relation: BoundedVec<ID, T::MaxContent>,
+		pub relation: BoundedVec<ID, T::MaxRelations>,
 
 		/// value before modification
-		pub before: Option<Value>,
+		pub before: Option<Value<T>>,
 
 		/// value after modification
-		pub after: Option<Value>,
+		pub after: Option<Value<T>>,
 	}
 
-	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, RuntimeDebug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-	pub enum Value {
-		ID(ID)
+	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
+	#[scale_info(skip_type_params(T))]
+	#[codec(mel_bound())]
+	pub enum Value<T: Config> {
+		ID(ID),
+		String(BoundedVec<u8, T::MaxString>),
 	}
 
 	pub type ID = u128;
@@ -55,7 +58,9 @@ pub mod pallet {
 		///
 		type MaxChanges: Get<u32>;
 		///
-		type MaxContent: Get<u32>;
+		type MaxRelations: Get<u32>;
+		///
+		type MaxString: Get<u32>;
 	}
 
 	// Pallets use events to inform users when important changes are made.
@@ -91,8 +96,8 @@ pub mod pallet {
 		Blake2_128Concat,
 		ID,
 		Blake2_128Concat,
-		BoundedVec<ID, T::MaxContent>,
-		Value // TODO (T::BlockNumber, Value),
+		BoundedVec<ID, T::MaxRelations>,
+		Value<T> // TODO (T::BlockNumber, Value),
 	>;
 
 	#[pallet::call]

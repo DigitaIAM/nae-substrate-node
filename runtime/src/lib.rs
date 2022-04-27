@@ -270,7 +270,8 @@ impl pallet_sudo::Config for Runtime {
 impl pallet_nae::Config for Runtime {
 	type Event = Event;
 	type MaxChanges = frame_support::traits::ConstU32<256>;
-	type MaxContent = frame_support::traits::ConstU32<16>;
+	type MaxRelations = frame_support::traits::ConstU32<16>;
+	type MaxString = frame_support::traits::ConstU32<256>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.

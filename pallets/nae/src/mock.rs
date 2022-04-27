@@ -52,7 +52,8 @@ impl system::Config for Test {
 impl pallet_nae::Config for Test {
 	type Event = Event;
 	type MaxChanges = frame_support::traits::ConstU32<16>;
-	type MaxContent = frame_support::traits::ConstU32<16>;
+	type MaxRelations = frame_support::traits::ConstU32<16>;
+	type MaxString = frame_support::traits::ConstU32<256>;
 }
 
 // Build genesis storage according to the mock runtime.
