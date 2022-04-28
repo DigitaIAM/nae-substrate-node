@@ -13,12 +13,15 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
+	#[cfg(feature = "std")]
+	use serde::{Serialize, Deserialize};
 	use frame_support::{
 		pallet_prelude::*, storage::bounded_vec::BoundedVec,
 		CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound
 	};
-	use frame_system::pallet_prelude::*;
+	use frame_system::{pallet_prelude::*, RawOrigin};
 	// use sp_std::prelude::*;
+	use sp_io::hashing::blake2_256;
 
 	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
 	#[scale_info(skip_type_params(T))]
@@ -30,26 +33,90 @@ pub mod pallet {
 		pub relation: BoundedVec<ID, T::MaxRelations>,
 
 		/// value before modification
-		pub before: Option<Value<T>>,
+		pub before: Option<Value>,
 
 		/// value after modification
-		pub after: Option<Value<T>>,
+		pub after: Option<Value>,
 	}
 
+	impl<T: Config> Change<T> {
+		fn new(
+			primary: ID,relation: BoundedVec<ID, T::MaxRelations>,
+			before: Option<Value>, after: Option<Value>
+		) -> Self {
+			Change { primary, relation, before, after }
+		}
+	}
+
+	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
 	#[scale_info(skip_type_params(T))]
 	#[codec(mel_bound())]
-	pub enum Value<T: Config> {
+	pub enum Value {
 		ID(ID),
-		IDS(BoundedVec<ID, T::MaxIDS>),
-		String(BoundedVec<u8, T::MaxString>),
+		// IDS(BoundedVector<ID, T::MaxIDS>),
+		// String(BoundedVector<u8, T::MaxString>),
 	}
 
-	pub type ID = u128;
+	// pub type ID = u128;
+
+	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
+	pub struct ID {
+		bits: [u8; 32]
+	}
+
+	impl ID {
+		pub fn string(str: &str) -> Self {
+			ID {
+				bits: blake2_256(str.as_bytes())
+			}
+		}
+	}
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
+
+	// Pallet's genesis configuration
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub memories: Vec<(T::AccountId, Vec<(ID, Vec<ID>, Value)>)>,
+	}
+
+	// Required to implement default for GenesisConfig
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> GenesisConfig<T> {
+			GenesisConfig { memories: vec![] }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			for (account, tuples) in &self.memories {
+				let mut changes = Vec::with_capacity(tuples.len());
+				for (primary, relation, value) in tuples {
+					changes.push(
+						Change::new(
+							primary.clone(),
+							relation.clone().try_into().unwrap(),
+							None,
+							Some(value.clone())
+						)
+					)
+				}
+
+				assert!(
+					Pallet::<T>::modify(
+						RawOrigin::Signed(account.clone()).into(),
+						changes.try_into().unwrap()
+					).is_ok()
+				);
+			}
+		}
+	}
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -99,7 +166,7 @@ pub mod pallet {
 		ID,
 		Blake2_128Concat,
 		BoundedVec<ID, T::MaxRelations>,
-		Value<T> // TODO (T::BlockNumber, Value),
+		Value // TODO (T::BlockNumber, Value),
 	>;
 
 	#[pallet::call]
@@ -124,13 +191,13 @@ pub mod pallet {
 			for change in changes.clone() {
 
 				// Verify that before states correct
-				let current = Memory::<T>::get(change.primary, &change.relation);
+				let current = Memory::<T>::get(&change.primary, &change.relation);
 				ensure!(current == change.before, Error::<T>::BeforeStateMismatch);
 
 				// mutate storage
 				match change.after {
-					None => Memory::<T>::remove(change.primary, change.relation),
-					Some(v) => Memory::<T>::insert(change.primary, change.relation, v),
+					None => Memory::<T>::remove(&change.primary, &change.relation),
+					Some(v) => Memory::<T>::insert(&change.primary, &change.relation, v),
 				}
 
 				// mutations.push(change);

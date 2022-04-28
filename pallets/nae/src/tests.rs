@@ -4,17 +4,17 @@ use frame_support::{assert_noop, assert_ok, BoundedVec};
 #[test]
 fn correct_mutations() {
 	new_test_ext().execute_with(|| {
-		let zeros = 0_u128; // H256::zero();
+		let zeros = ID::string("0"); // H256::zero();
 
 		let subject = zeros;
 		let relation = BoundedVec::default(); // TODO [zeros].to_vec();
 
-		let v1 = Value::ID(1_u128);
-		let v2 = Value::ID(2_u128);
+		let v1 = Value::ID(ID::string("1"));
+		let v2 = Value::ID(ID::string("2"));
 
 		let changes = [
 			Change::<Test> {
-				primary: subject,
+				primary: subject.clone(),
 				relation: relation.clone(),
 				before: None,
 				after: Some(v1.clone())
@@ -22,11 +22,11 @@ fn correct_mutations() {
 		].to_vec().try_into().unwrap();
 
 		assert_ok!(Nae::modify(Origin::signed(1), changes));
-		assert_eq!(Nae::memory(subject, relation.clone()), Some(v1.clone()));
+		assert_eq!(Nae::memory(&subject, &relation), Some(v1.clone()));
 
 		let changes = [
 			Change::<Test> {
-				primary: subject,
+				primary: subject.clone(),
 				relation: relation.clone(),
 				before: Some(v1.clone()),
 				after: Some(v2.clone())
@@ -34,11 +34,11 @@ fn correct_mutations() {
 		].to_vec().try_into().unwrap();
 
 		assert_ok!(Nae::modify(Origin::signed(1), changes));
-		assert_eq!(Nae::memory(subject, relation.clone()), Some(v2.clone()));
+		assert_eq!(Nae::memory(&subject, &relation), Some(v2.clone()));
 
 		let changes = [
 			Change::<Test> {
-				primary: subject,
+				primary: subject.clone(),
 				relation: relation.clone(),
 				before: Some(v2.clone()),
 				after: None
@@ -46,7 +46,7 @@ fn correct_mutations() {
 		].to_vec().try_into().unwrap();
 
 		assert_ok!(Nae::modify(Origin::signed(1), changes));
-		assert_eq!(Nae::memory(subject, relation.clone()), None);
+		assert_eq!(Nae::memory(&subject, &relation), None);
 	});
 }
 
