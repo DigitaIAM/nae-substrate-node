@@ -20,10 +20,10 @@ pub mod pallet {
 		CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound
 	};
 	use frame_system::{pallet_prelude::*, RawOrigin};
-	// use sp_std::prelude::*;
+	use sp_std::prelude::*;
 	use sp_io::hashing::blake2_256;
 
-	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
+	#[derive(Encode, Decode, TypeInfo, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)] // TODO MaxEncodedLen
 	#[scale_info(skip_type_params(T))]
 	pub struct Change<T: Config> {
 		/// primary object of relation
@@ -49,13 +49,15 @@ pub mod pallet {
 	}
 
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
+	#[derive(Encode, Decode, TypeInfo, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)] // TODO MaxEncodedLen
 	#[scale_info(skip_type_params(T))]
 	#[codec(mel_bound())]
 	pub enum Value {
 		ID(ID),
-		// IDS(BoundedVector<ID, T::MaxIDS>),
-		// String(BoundedVector<u8, T::MaxString>),
+		IDS(Vec<ID>),
+		// IDS(BoundedVec<ID, T::MaxIDS>),
+		String(Vec<u8>),
+		// String(BoundedVec<u8, T::MaxString>),
 	}
 
 	// pub type ID = u128;
@@ -76,6 +78,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info] // TODO remove after switch to BoundedVec at Value
 	pub struct Pallet<T>(_);
 
 	// Pallet's genesis configuration
