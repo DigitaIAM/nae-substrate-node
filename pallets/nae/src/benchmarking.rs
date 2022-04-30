@@ -3,8 +3,8 @@
 
 use super::*;
 use frame_benchmarking::benchmarks;
-use frame_system::RawOrigin;
 use frame_support::{pallet_prelude::*, storage::bounded_vec::BoundedVec};
+use frame_system::RawOrigin;
 use sp_std::vec::Vec;
 
 benchmarks! {

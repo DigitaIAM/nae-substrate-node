@@ -13,17 +13,19 @@ mod benchmarking;
 
 #[frame_support::pallet]
 pub mod pallet {
-	#[cfg(feature = "std")]
-	use serde::{Serialize, Deserialize};
 	use frame_support::{
-		pallet_prelude::*, storage::bounded_vec::BoundedVec,
-		CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound
+		pallet_prelude::*, storage::bounded_vec::BoundedVec, CloneNoBound, EqNoBound,
+		PartialEqNoBound, RuntimeDebugNoBound,
 	};
 	use frame_system::{pallet_prelude::*, RawOrigin};
-	use sp_std::prelude::*;
+	#[cfg(feature = "std")]
+	use serde::{Deserialize, Serialize};
 	use sp_io::hashing::blake2_256;
+	use sp_std::prelude::*;
 
-	#[derive(Encode, Decode, TypeInfo, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)] // TODO MaxEncodedLen
+	#[derive(
+		Encode, Decode, TypeInfo, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound,
+	)] // TODO MaxEncodedLen
 	#[scale_info(skip_type_params(T))]
 	pub struct Change<T: Config> {
 		/// primary object of relation
@@ -41,15 +43,19 @@ pub mod pallet {
 
 	impl<T: Config> Change<T> {
 		fn new(
-			primary: ID,relation: BoundedVec<ID, T::MaxRelations>,
-			before: Option<Value>, after: Option<Value>
+			primary: ID,
+			relation: BoundedVec<ID, T::MaxRelations>,
+			before: Option<Value>,
+			after: Option<Value>,
 		) -> Self {
 			Change { primary, relation, before, after }
 		}
 	}
 
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[derive(Encode, Decode, TypeInfo, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)] // TODO MaxEncodedLen
+	#[derive(
+		Encode, Decode, TypeInfo, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound,
+	)] // TODO MaxEncodedLen
 	#[scale_info(skip_type_params(T))]
 	#[codec(mel_bound())]
 	pub enum Value {
@@ -63,16 +69,23 @@ pub mod pallet {
 	// pub type ID = u128;
 
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, CloneNoBound, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound)]
+	#[derive(
+		Encode,
+		Decode,
+		TypeInfo,
+		MaxEncodedLen,
+		CloneNoBound,
+		RuntimeDebugNoBound,
+		PartialEqNoBound,
+		EqNoBound,
+	)]
 	pub struct ID {
-		bits: [u8; 32]
+		bits: [u8; 32],
 	}
 
 	impl ID {
 		pub fn string(str: &str) -> Self {
-			ID {
-				bits: blake2_256(str.as_bytes())
-			}
+			ID { bits: blake2_256(str.as_bytes()) }
 		}
 	}
 
@@ -101,22 +114,19 @@ pub mod pallet {
 			for (account, tuples) in &self.memories {
 				let mut changes = Vec::with_capacity(tuples.len());
 				for (primary, relation, value) in tuples {
-					changes.push(
-						Change::new(
-							primary.clone(),
-							relation.clone().try_into().unwrap(),
-							None,
-							Some(value.clone())
-						)
-					)
+					changes.push(Change::new(
+						primary.clone(),
+						relation.clone().try_into().unwrap(),
+						None,
+						Some(value.clone()),
+					))
 				}
 
-				assert!(
-					Pallet::<T>::modify(
-						RawOrigin::Signed(account.clone()).into(),
-						changes.try_into().unwrap()
-					).is_ok()
-				);
+				assert!(Pallet::<T>::modify(
+					RawOrigin::Signed(account.clone()).into(),
+					changes.try_into().unwrap()
+				)
+				.is_ok());
 			}
 		}
 	}
@@ -142,7 +152,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event emitted when changes has been accepted.
-		MutationAccepted(T::AccountId, BoundedVec<Change<T>, T::MaxChanges>)
+		MutationAccepted(T::AccountId, BoundedVec<Change<T>, T::MaxChanges>),
 	}
 
 	#[pallet::error]
@@ -169,7 +179,7 @@ pub mod pallet {
 		ID,
 		Blake2_128Concat,
 		BoundedVec<ID, T::MaxRelations>,
-		Value // TODO (T::BlockNumber, Value),
+		Value, // TODO (T::BlockNumber, Value),
 	>;
 
 	#[pallet::call]
@@ -177,7 +187,7 @@ pub mod pallet {
 		#[pallet::weight(1_000_000)]
 		pub fn modify(
 			origin: OriginFor<T>,
-			changes: BoundedVec<Change<T>, T::MaxChanges>
+			changes: BoundedVec<Change<T>, T::MaxChanges>,
 		) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
@@ -192,7 +202,6 @@ pub mod pallet {
 			// let mut mutations = Vec::with_capacity(changes.len());
 
 			for change in changes.clone() {
-
 				// Verify that before states correct
 				let current = Memory::<T>::get(&change.primary, &change.relation);
 				ensure!(current == change.before, Error::<T>::BeforeStateMismatch);
