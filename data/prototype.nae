@@ -1,0 +1,94 @@
+language language english "language"
+language language russian "язык"
+
+country language english "country"
+country language russian "страна"
+
+currency language english "currency"
+currency language russian "валюта"
+
+date language english "date"
+date language russian "дата"
+
+organization language english "organization"
+organization language russian "организация"
+
+person language english "person"
+person language russian "человек"
+
+counterpart language english "counterpart"
+counterpart language russian "контрагент"
+
+storage language english "storage"
+storage language russian "склад"
+
+material language english "material"
+material language russian "материал"
+
+goods language english "goods"
+goods language russian "товар"
+
+quantity language english "quantity"
+quantity language russian "количество"
+
+price language english "price"
+price language russian "цена"
+
+cost language english "cost"
+cost language russian "стоимость"
+
+# TODO cost = qty * price; qty = cost / price; price = cost / qty;
+
+english language english "english"
+english language russian "английский"
+english specific-of language
+
+russian language english "russian"
+russian language russian "русский"
+russian specific-of language
+
+uzbek language english "uzbek"
+uzbek language russian "узбекский"
+uzbek specific-of language
+
+USA language english "United States of America"
+USA language russian "Соединённые Штаты Америки"
+USA ISO_3166-1_alpha-3 "USA"
+USA specific-of country
+USA currency USD
+
+USD language english "United States dollar"
+USD language russian "Доллар США"
+USD specific-of currency
+
+UZB language english "Republic of Uzbekistan"
+UZB language russian "Республика Узбекистан"
+UZB ISO_3166-1_alpha-3 "UZB"
+UZB currency UZS
+UZB specific-of country
+
+UZS language english "Uzbekistan Sum"
+UZS language russian "Узбекский сум"
+UZS specific-of currency
+
+material_receipts language english "Material receipts"
+material_receipts language russian "Поступление материалов"
+material_receipts specific-of ui_form
+material_receipts fields [date,counterparty,store, amount, goods]
+# material_receipts owner f"defined(division)"
+material_receipts date f"input(date)"
+material_receipts counterparty f"combobox([organisation,person])"
+material_receipts store f"combobox(store)"
+# material_receipts currency f"compobox(currency), default(counterparty.currency, owner.currency)"
+material_receipts goods f"table(NEWID_2)"
+material_receipts amount f"sum(goods.cost)"
+
+NEWID_2 specific-of table
+NEWID_2 сolumns [goods,quantity,price,cost]
+NEWID_2 goods f"combobox(goods)"
+NEWID_2 quantity f"input(quantity)"
+NEWID_2 price f"input(price)"
+NEWID_2 cost f"input(cost)"
+
+
+

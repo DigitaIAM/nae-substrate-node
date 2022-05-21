@@ -4,13 +4,13 @@ use frame_support::{assert_noop, assert_ok, BoundedVec};
 #[test]
 fn correct_mutations() {
 	new_test_ext().execute_with(|| {
-		let zeros = ID::string("0"); // H256::zero();
+		let zeros: ID = "0".into();
 
-		let subject = zeros;
+		let subject = zeros.clone();
 		let relation = BoundedVec::default(); // TODO [zeros].to_vec();
 
-		let v1 = Value::ID(ID::string("1"));
-		let v2 = Value::ID(ID::string("2"));
+		let v1 = Value::ID("1".into());
+		let v2 = Value::ID("2".into());
 
 		let changes = [Change::<Test> {
 			primary: subject.clone(),

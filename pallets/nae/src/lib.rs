@@ -1,5 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate core;
+
 pub use pallet::*;
 
 #[cfg(test)]
@@ -61,9 +63,30 @@ pub mod pallet {
 	pub enum Value {
 		ID(ID),
 		IDS(Vec<ID>),
-		// IDS(BoundedVec<ID, T::MaxIDS>),
+		// TODO IDS(BoundedVec<ID, T::MaxIDS>),
 		String(Vec<u8>),
-		// String(BoundedVec<u8, T::MaxString>),
+		// TODO String(BoundedVec<u8, T::MaxString>),
+	}
+
+	impl Value {
+		pub fn id(str: &str) -> Value {
+			Value::ID(str.into())
+		}
+
+		pub fn string(str: &str) -> Value {
+			Value::String(str.as_bytes().to_vec())
+		}
+	}
+
+	impl Into<Value> for &str {
+		fn into(self) -> Value {
+			let len = self.len();
+			if self.starts_with("\"") && self.ends_with("\"") && len > 2 {
+				Value::string(&self[1..len-1])
+			} else {
+				Value::id(self)
+			}
+		}
 	}
 
 	// pub type ID = u128;
@@ -83,9 +106,9 @@ pub mod pallet {
 		bits: [u8; 32],
 	}
 
-	impl ID {
-		pub fn string(str: &str) -> Self {
-			ID { bits: blake2_256(str.as_bytes()) }
+	impl Into<ID> for &str {
+		fn into(self) -> ID {
+			ID { bits: blake2_256(self.as_bytes()) }
 		}
 	}
 
@@ -97,21 +120,65 @@ pub mod pallet {
 	// Pallet's genesis configuration
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		pub memories: Vec<(T::AccountId, Vec<(ID, Vec<ID>, Value)>)>,
+		pub memories: Vec<Vec<(ID, Vec<ID>, Value)>>,
+		pub root: Option<T::AccountId>,
 	}
 
 	// Required to implement default for GenesisConfig
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> GenesisConfig<T> {
-			GenesisConfig { memories: vec![] }
+		fn default() -> Self {
+			use std::io::BufRead;
+
+			let mut memories: Vec<Vec<(ID, Vec<ID>, Value)>> = Vec::with_capacity(1_000_000);
+			let mut changes: Vec<(ID, Vec<ID>, Value)> = Vec::with_capacity(256);
+
+			let file = std::fs::File::open("data/prototype.nae").expect("cannot open genesis config file");
+			let reader = std::io::BufReader::new(file);
+
+			for data in reader.lines() {
+				let data = data.expect("data");
+
+				// ignore comments
+				if data.starts_with("#") {
+					continue;
+				}
+
+				let line = data.trim();
+				if line.is_empty() {
+					if changes.is_empty() {
+						continue;
+					} else {
+						memories.push(changes.clone());
+						changes.clear();
+					}
+				} else {
+					println!("{}", line);
+
+					let mut parts = line.split(" ").collect::<Vec<&str>>();
+					if parts.len() < 2 {
+						panic!("unexpected number of items in record: {}", line);
+					}
+
+					let primary: ID = parts.remove(0).into();
+					let value: Value = parts.remove(parts.len() - 1).into();
+
+					let relation = parts.iter().map(|id| (*id).into()).collect();
+
+					changes.push((primary, relation, value));
+				}
+			}
+
+			GenesisConfig { memories, root: None }
 		}
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
-			for (account, tuples) in &self.memories {
+			let mut count: u32 = 0;
+			let root = self.root.as_ref().expect("root account");
+			for tuples in &self.memories {
 				let mut changes = Vec::with_capacity(tuples.len());
 				for (primary, relation, value) in tuples {
 					changes.push(Change::new(
@@ -122,8 +189,11 @@ pub mod pallet {
 					))
 				}
 
+				println!("{}", count);
+				count += 1;
+
 				assert!(Pallet::<T>::modify(
-					RawOrigin::Signed(account.clone()).into(),
+					RawOrigin::Signed(root.clone()).into(),
 					changes.try_into().unwrap()
 				)
 				.is_ok());
